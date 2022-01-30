@@ -1,0 +1,14 @@
+[package]
+name = "bibparser"
+version = "0.3.0"
+edition = "2021"
+authors = ["tajpulo"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/tajpulo/bibparser"
+keywords = ["biblatex", "biber", "latex", "tex"]
+categories = ["encoding", "parser-implementations", "text-processing"]
+description = "A parser for .bib files"
+
+[dependencies]
+clap = { version = "3.0.13", features = ["derive"] }
