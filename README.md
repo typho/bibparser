@@ -1,51 +1,67 @@
 # bibparser
 
-A Rust crate for parsing BibTeχ and BibLaTeχ files without Teχ interpretation.
+A Rust crate for parsing BibTeχ and BibLaTeχ files.
 
 As opposed to the `biblatex` crate, this crate does not try to interpret the content of fields.
-This crate resulted from the usecase that `biblatex` threw an error when math mode was interrupted prematurely.
+This crate resulted from the usecase that `biblatex` threw an error when math inline mode was not terminated before text was cut off.
 
-## Usage
+## Who should use it?
+
+Anyone, how wants to retrieve data from a `.bib` file.
+
+## How does one use it?
+
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-bibparser = "0.5"
+bibparser = "0.3.1"
 ```
 
-Parsing a bibliography and getting the author of an item is as simple as:
-
+Instantiate the parser and iterate over the items:
 ```rust
-let src = "@book{tolkien1937, author = {J. R. R. Tolkien}}";
-let bibliography = Bibliography::parse(src).unwrap();
-let entry = bibliography.get("tolkien1937").unwrap();
-let author = entry.author().unwrap();
-assert_eq!(author[0].name, "Tolkien");
+use bibparser::Parser;
+
+//let mut p = Parser::from_file("source.bib")?;
+let mut p = Parser::from_str(r#"@book{tolkien1937, author = {J. R. R. Tolkien}}"#)?;
+for result in p.iter() {
+  let entry = result?;
+  println!("type = {}", entry.kind);
+  println!("id = {}", entry.id);
+  for (name, data) in entry.fields.iter() {
+      println!("\t{}\t= {}", name, data);
+  }
+}
 ```
 
-This library operates on a `Bibliography` struct, which is a collection of
-_entries_ (the items in your `.bib` file that start with an `@` and are wrapped
-in curly braces). The entries may hold multiple fields. Entries have getter
-methods for each of the possible fields in a Bib(La)TeX file which handle
-possible field aliases, composition and type conversion automatically.
+## How does one run it?
 
-Refer to the [WikiBook section on LaTeX bibliography management](https://en.wikibooks.org/wiki/LaTeX/Bibliography_Management)
-and the [BibLaTeX package manual](http://ctan.ebinger.cc/tex-archive/macros/latex/contrib/biblatex/doc/biblatex.pdf)
-to learn more about the intended meaning of each of the fields.
+This library comes with one example:
 
-The generated documentation more specifically describes the selection and
-behavior of the getters but generally, they follow the convention of being the
-snake-case name of the corresponding field
-(such that the getter for `booktitleaddon` is named `book_title_addon`).
+```bash
+$ cargo run --example cli -- --input refs.bib --query-id "tolkien1937"
+```
 
-## Limitations
+In this example, the library would read file `refs.bib` and then only print the entry with ID `tolkien1937` to stdout.
 
-This library attempts to provide fairly comprehensive coverage of the BibLaTeX
-spec with which most of the `.bib` files in circulation can be processed.
+## Where is the source code?
 
-However, the crate currently has some limitations:
+On [github](https://github.com/typho/bibparser).
 
-- Math mode formatting is not being processed, instead, the output strings will
-  contain the dollar-delimited math syntax as it is found in the input string.
-- There is no explicit support for entry sets, although it is easy to account
-  for them by manually getting the `entryset` field and calling
-  `parse::<Vec<String>>()` on it
+## What is the content's license?
+
+[MIT License](LICENSE.txt)
+
+## Changelog
+
+* **2022-01-30 version 0.3.1:** fix documentation & README
+* **2022-01-30 version 0.3.0:** initial release
+
+## Where can I ask you to fix a bug?
+
+On [github](https://github.com/typho/bibparser/issues).
+
+## What are known bugs / limitations?
+
+- `.bib` are strongly associated with Teχ which is a programming language, not a markup language. As such only the plain Teχ engine would be capable of understanding the content (esp. the field's `data` content). This library explicitly takes the approach to assume the content to be a markup language, which hopefully serves 99% of all usecases.
+- The markup language parsed by this library is not formalized.
+- Compability to BibTeχ or biblatex was not comprehensively tested.
