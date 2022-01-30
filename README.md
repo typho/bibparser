@@ -38,7 +38,13 @@ for result in p.iter() {
 This library comes with one example:
 
 ```bash
-$ cargo run --example cli -- --input refs.bib --query-id "tolkien1937"
+$ cargo run --example cli -- --input refs.bib
+```
+
+You can also enable serde-json support in order to print data as JSON:
+
+```bash
+$ cargo run --features serde,serde_json --example cli -- --input bib_biblatex.bib --json
 ```
 
 In this example, the library would read file `refs.bib` and then only print the entry with ID `tolkien1937` to stdout.
