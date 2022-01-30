@@ -14,7 +14,7 @@ Anyone, how wants to retrieve data from a `.bib` file.
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-bibparser = "0.3.1"
+bibparser = "0.3.2"
 ```
 
 Instantiate the parser and iterate over the items:
@@ -59,6 +59,7 @@ On [github](https://github.com/typho/bibparser).
 
 ## Changelog
 
+* **2022-01-30 version 0.3.2:** bugfix cli example & add JSON support
 * **2022-01-30 version 0.3.1:** fix documentation & README
 * **2022-01-30 version 0.3.0:** initial release
 
