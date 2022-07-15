@@ -14,7 +14,7 @@ Anyone, how wants to retrieve data from a `.bib` file.
 Add this to your `Cargo.toml`:
 ```toml
 [dependencies]
-bibparser = "0.3.2"
+bibparser = "0.4.0"
 ```
 
 Instantiate the parser and iterate over the items:
@@ -44,7 +44,7 @@ $ cargo run --example cli -- --input refs.bib
 You can also enable serde-json support in order to print data as JSON:
 
 ```bash
-$ cargo run --features serde,serde_json --example cli -- --input bib_biblatex.bib --json
+$ cargo run --features serde,serde_json --example cli -- --input refs.bib --json
 ```
 
 In this example, the library would read file `refs.bib` and then only print the entry with ID `tolkien1937` to stdout.
@@ -59,6 +59,7 @@ On [github](https://github.com/typho/bibparser).
 
 ## Changelog
 
+* **2022-07-16 version 0.4.0:** skip @preamble, proper escape character handling, more tests, bugfix lexing error propagation
 * **2022-01-30 version 0.3.2:** bugfix cli example & add JSON support
 * **2022-01-30 version 0.3.1:** fix documentation & README
 * **2022-01-30 version 0.3.0:** initial release
