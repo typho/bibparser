@@ -59,7 +59,7 @@ pub struct BibEntries<'i> {
 
 impl<'i> BibEntries<'i> {
     /// parse() continues parsing and adds new elements to `self.entries`
-    fn parse(&mut self) -> Option<Box<dyn error::Error>> {
+    fn parse(&mut self) -> Result<(), errors::ParsingError> {
         use lexer::Token as T;
 
         match self.iter.next() {
@@ -68,31 +68,34 @@ impl<'i> BibEntries<'i> {
                     T::EntrySymbol => {}
                     T::EntryType(kind) => self.current.kind.push_str(&kind),
                     T::OpenEntry => {}
-                    T::EntryId(id) => self.current.id.push_str(&id),
+                    T::EntryId(id) => if id.to_lowercase() != "preamble" { self.current.id.push_str(&id) },
                     T::FieldName(name) => {
                         self.name_cached = name;
                     }
                     T::FieldData(data) => {
                         let name = mem::take(&mut self.name_cached);
                         if self.current.fields.get(&name).is_some() {
-                            return Some(Box::new(errors::ParsingError {
+                            return Err(errors::ParsingError {
                                 kind: errors::ParsingErrorKind::DuplicateName(name),
                                 info: token_info,
-                            }));
+                            });
                         }
                         self.current.fields.insert(name, data);
                     }
                     T::CloseEntry => {
                         let finished = mem::replace(&mut self.current, types::BibEntry::new());
-                        self.entries.push_back(finished);
+                        if !finished.id.is_empty() {
+                            self.entries.push_back(finished);
+                        }
                     }
                     T::EndOfFile => {}
+                    T::Preamble(_) => {}  // NOTE: preamble strings are unsupported
                 },
-                Err(e) => return Some(e),
+                Err(e) => return Err(e.to_parsing_error()),
             },
             None => self.finished = true,
         }
-        None
+        Ok(())
     }
 }
 
@@ -107,8 +110,8 @@ impl<'s> Iterator for BibEntries<'s> {
             if let Some(entry) = self.entries.pop_front() {
                 return Some(Ok(entry));
             }
-            if let Some(err) = self.parse() {
-                return Some(Err(err));
+            if let Err(err) = self.parse() {
+                return Some(Err(Box::new(err)));
             }
         }
     }
@@ -162,6 +165,39 @@ mod tests {
             entry.fields.get("bibsource").unwrap(),
             "{dblp computer science bibliography}, https://dblp.org"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_entry_with_many_whitespaces() -> Result<(), Box<dyn error::Error>> {
+        let src = r#"@ book { DBLP:books/lib/Knuth97 , author    = { Donald Ervin Knuth },year={1997}   } "#;
+        let mut p = Parser::from_str(src)?;
+        let mut iter = p.iter();
+        let entry = iter.next().unwrap()?;
+        assert_eq!(entry.kind, "book");
+        assert_eq!(entry.id, "DBLP:books/lib/Knuth97");
+        assert_eq!(entry.fields.get("year").unwrap(), "1997");
+        assert_eq!(entry.fields.get("author").unwrap(), " Donald Ervin Knuth ");
+        Ok(())
+    }
+
+    #[test]
+    fn test_preamble() -> Result<(), Box<dyn error::Error>> {
+        let mut p = Parser::from_str(r#"@book{tolkien1937, author = {J. R. R. Tolkien}}
+@preamble{ "\ifdefined\DeclarePrefChars\DeclarePrefChars{'’-}\else\fi " } "#)?;
+
+        let mut count = 0;
+        for e in p.iter() {
+            let entry = e?;
+            assert_eq!(entry.kind, "book");
+            assert_eq!(entry.id, "tolkien1937");
+            assert_eq!(
+                entry.fields.get("author"),
+                Some(&"J. R. R. Tolkien".to_string())
+            );
+            count += 1;
+        }
+        assert_eq!(count, 1);
         Ok(())
     }
 }
