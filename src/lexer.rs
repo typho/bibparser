@@ -64,7 +64,7 @@ impl fmt::Display for Token {
 
 /// Additional source code information attached to a Token
 /// for improved error messages
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub(crate) struct TokenInfo {
     pub(crate) lineno: usize,
     pub(crate) colno: usize,
@@ -180,7 +180,8 @@ impl<'s> LexingIterator<'s> {
                             if self.arg_cache.is_empty() {
                                 // ignore
                             } else {
-                                self.next_tokens.push_back((Token::EntrySymbol, self.info(line)));
+                                self.next_tokens
+                                    .push_back((Token::EntrySymbol, self.info(line)));
                                 self.state = LexingState::WaitForOpen;
                             }
                         } else if chr.is_alphanumeric()
@@ -191,10 +192,14 @@ impl<'s> LexingIterator<'s> {
                             if !self.arg_cache.is_empty() {
                                 self.current_id = Some(self.arg_cache.clone());
                             }
-                            self.next_tokens.push_back((Token::EntrySymbol, self.info(line)));
                             self.next_tokens
-                                .push_back((Token::EntryType(self.arg_cache.clone()), self.info(line)));
-                            self.next_tokens.push_back((Token::OpenEntry, self.info(line)));
+                                .push_back((Token::EntrySymbol, self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::EntryType(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
+                            self.next_tokens
+                                .push_back((Token::OpenEntry, self.info(line)));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingId;
 
@@ -213,9 +218,12 @@ impl<'s> LexingIterator<'s> {
                         if chr.is_whitespace() {
                             // ignore
                         } else if chr == '{' {
+                            self.next_tokens.push_back((
+                                Token::EntryType(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.next_tokens
-                                .push_back((Token::EntryType(self.arg_cache.clone()), self.info(line)));
-                            self.next_tokens.push_back((Token::OpenEntry, self.info(line)));
+                                .push_back((Token::OpenEntry, self.info(line)));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingId;
 
@@ -225,7 +233,6 @@ impl<'s> LexingIterator<'s> {
                                     self.state = LexingState::ReadingPreambleStringStart;
                                 }
                             }
-
                         } else {
                             return unexpected("expecting '{' to start list of fields");
                         }
@@ -239,8 +246,10 @@ impl<'s> LexingIterator<'s> {
                                 self.state = LexingState::WaitForComma;
                             }
                         } else if chr == ',' {
-                            self.next_tokens
-                                .push_back((Token::EntryId(self.arg_cache.clone()), self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::EntryId(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingName;
                         } else if !chr.is_ascii() {
@@ -253,8 +262,10 @@ impl<'s> LexingIterator<'s> {
                         if chr.is_whitespace() {
                             // ignore
                         } else if chr == ',' {
-                            self.next_tokens
-                                .push_back((Token::EntryId(self.arg_cache.clone()), self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::EntryId(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingName;
                         } else {
@@ -269,8 +280,10 @@ impl<'s> LexingIterator<'s> {
                                 self.state = LexingState::WaitForAssign;
                             }
                         } else if chr == '=' {
-                            self.next_tokens
-                                .push_back((Token::FieldName(self.arg_cache.clone()), self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::FieldName(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingDataStart;
                         } else if chr.is_ascii() {
@@ -283,8 +296,10 @@ impl<'s> LexingIterator<'s> {
                         if chr.is_whitespace() {
                             // ignore
                         } else if chr == '=' {
-                            self.next_tokens
-                                .push_back((Token::FieldName(self.arg_cache.clone()), self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::FieldName(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingDataStart;
                         } else {
@@ -345,7 +360,8 @@ impl<'s> LexingIterator<'s> {
                         } else if self.escape_character && chr == '"' && self.dblquotes_terminator {
                             self.escape_character = false;
                             self.arg_cache.push(chr);
-                        } else if self.escape_character && chr == '}' && self.curlybrace_terminator {
+                        } else if self.escape_character && chr == '}' && self.curlybrace_terminator
+                        {
                             self.escape_character = false;
                             self.arg_cache.push(chr);
                         } else if self.escape_character {
@@ -363,12 +379,13 @@ impl<'s> LexingIterator<'s> {
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingPreambleString;
                         } else if chr == '}' {
-                            self.next_tokens.push_back((Token::CloseEntry, self.info(line)));
+                            self.next_tokens
+                                .push_back((Token::CloseEntry, self.info(line)));
                             self.state = LexingState::Default;
                         } else {
                             return unexpected("reading '\"' to start a preamble string or '}' to end preamble entry");
                         }
-                    },
+                    }
                     LexingState::ReadingPreambleStringStartOrConcat => {
                         // this state is similar to “ReadingPreambleStringStart”
                         // but also accepts "#" because this character concatenates strings
@@ -378,7 +395,8 @@ impl<'s> LexingIterator<'s> {
                             self.arg_cache.clear();
                             self.state = LexingState::ReadingPreambleString;
                         } else if chr == '}' {
-                            self.next_tokens.push_back((Token::CloseEntry, self.info(line)));
+                            self.next_tokens
+                                .push_back((Token::CloseEntry, self.info(line)));
                             self.state = LexingState::Default;
                         } else if chr == '#' {
                             self.state = LexingState::ReadingPreambleStringStart;
@@ -386,7 +404,7 @@ impl<'s> LexingIterator<'s> {
                         } else {
                             return unexpected("reading '\"' to start a preamble string or '}' to end preamble entry");
                         }
-                    },
+                    }
                     LexingState::ReadingPreambleString => {
                         if chr == '\\' && !self.escape_character {
                             self.escape_character = true;
@@ -394,8 +412,10 @@ impl<'s> LexingIterator<'s> {
                             self.escape_character = false;
                             self.arg_cache.push('"');
                         } else if chr == '"' && !self.escape_character {
-                            self.next_tokens
-                                .push_back((Token::Preamble(self.arg_cache.clone()), self.info(line)));
+                            self.next_tokens.push_back((
+                                Token::Preamble(self.arg_cache.clone()),
+                                self.info(line),
+                            ));
                             self.state = LexingState::ReadingPreambleStringStartOrConcat;
                         } else {
                             if self.escape_character {
@@ -404,12 +424,13 @@ impl<'s> LexingIterator<'s> {
                             self.arg_cache.push(chr);
                             self.escape_character = false;
                         }
-                    },
+                    }
                     LexingState::WaitForSep => {
                         if chr == ',' {
                             self.state = LexingState::ReadingName;
                         } else if chr == '}' {
-                            self.next_tokens.push_back((Token::CloseEntry, self.info(line)));
+                            self.next_tokens
+                                .push_back((Token::CloseEntry, self.info(line)));
                             self.state = LexingState::Default;
                         } else if chr.is_whitespace() {
                             // ignore
@@ -424,9 +445,7 @@ impl<'s> LexingIterator<'s> {
         }
 
         if self.state != LexingState::Default {
-            return Err(errors::LexingError::UnexpectedEOF(
-                self.state.to_string(),
-            ));
+            return Err(errors::LexingError::UnexpectedEOF(self.state.to_string()));
         }
 
         self.next_tokens.push_back((
@@ -515,7 +534,7 @@ impl str::FromStr for Lexer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{str::FromStr, error::Error};
+    use std::{error::Error, str::FromStr};
 
     #[test]
     fn test_tolkien() -> Result<(), Box<dyn Error>> {
@@ -536,10 +555,10 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn test_dblp_okada_wang() -> Result<(), Box<dyn Error>> {
-        let l = Lexer::from_str(r#"@article{DBLP:journals/iacr/OkadaW20,
+        let l = Lexer::from_str(
+            r#"@article{DBLP:journals/iacr/OkadaW20,
             author    = {Satoshi Okada and
                          Yuntao Wang},
             title     = {Key Recovery Attack on Bob's Secrets in {CRYSTALS-KYBER} and {SABER}},
@@ -551,7 +570,8 @@ mod tests {
             biburl    = {https://dblp.org/rec/journals/iacr/OkadaW20.bib},
             bibsource = {dblp computer science bibliography, https://dblp.org}
           }
-          "#)?;
+          "#,
+        )?;
         let mut seq = Vec::<Token>::new();
         for t in l.iter() {
             let (token, _info) = t?;
@@ -565,18 +585,46 @@ mod tests {
         assert_eq!(seq[0], Token::EntrySymbol);
         assert_eq!(seq[1], Token::EntryType("article".to_string()));
         assert_eq!(seq[2], Token::OpenEntry);
-        assert_eq!(seq[3], Token::EntryId("DBLP:journals/iacr/OkadaW20".to_string()));
+        assert_eq!(
+            seq[3],
+            Token::EntryId("DBLP:journals/iacr/OkadaW20".to_string())
+        );
 
         let mut idx = 3;
-        check(&seq, &mut idx, "author", "Satoshi Okada and\n                         Yuntao Wang");
-        check(&seq, &mut idx, "title", "Key Recovery Attack on Bob's Secrets in {CRYSTALS-KYBER} and {SABER}");
+        check(
+            &seq,
+            &mut idx,
+            "author",
+            "Satoshi Okada and\n                         Yuntao Wang",
+        );
+        check(
+            &seq,
+            &mut idx,
+            "title",
+            "Key Recovery Attack on Bob's Secrets in {CRYSTALS-KYBER} and {SABER}",
+        );
         check(&seq, &mut idx, "journal", "{IACR} Cryptol. ePrint Arch.");
         check(&seq, &mut idx, "pages", "1503");
         check(&seq, &mut idx, "year", "2020");
         check(&seq, &mut idx, "url", "https://eprint.iacr.org/2020/1503");
-        check(&seq, &mut idx, "timestamp", "Mon, 04 Jan 2021 17:01:43 +0100");
-        check(&seq, &mut idx, "biburl", "https://dblp.org/rec/journals/iacr/OkadaW20.bib");
-        check(&seq, &mut idx, "bibsource", "dblp computer science bibliography, https://dblp.org");
+        check(
+            &seq,
+            &mut idx,
+            "timestamp",
+            "Mon, 04 Jan 2021 17:01:43 +0100",
+        );
+        check(
+            &seq,
+            &mut idx,
+            "biburl",
+            "https://dblp.org/rec/journals/iacr/OkadaW20.bib",
+        );
+        check(
+            &seq,
+            &mut idx,
+            "bibsource",
+            "dblp computer science bibliography, https://dblp.org",
+        );
 
         assert_eq!(seq[idx + 1], Token::CloseEntry);
         assert_eq!(seq[idx + 2], Token::EndOfFile);
@@ -599,11 +647,12 @@ mod tests {
         Ok(())
     }
 
-
     #[test]
     fn test_preamble() -> Result<(), Box<dyn Error>> {
-        let l = Lexer::from_str(r##"@PREAMBLE{ "\newcommand{\noopsort}[1]{} "
-        # "\newcommand{\singleletter}[1]{\"#1\"} " }"##)?;
+        let l = Lexer::from_str(
+            r##"@PREAMBLE{ "\newcommand{\noopsort}[1]{} "
+        # "\newcommand{\singleletter}[1]{\"#1\"} " }"##,
+        )?;
         let mut seq = Vec::<Token>::new();
         for t in l.iter() {
             let (token, _info) = t?;
@@ -612,8 +661,14 @@ mod tests {
         assert_eq!(seq[0], Token::EntrySymbol);
         assert_eq!(seq[1], Token::EntryType("PREAMBLE".to_string()));
         assert_eq!(seq[2], Token::OpenEntry);
-        assert_eq!(seq[3], Token::Preamble(r"\newcommand{\noopsort}[1]{} ".to_string()));
-        assert_eq!(seq[4], Token::Preamble(r##"\newcommand{\singleletter}[1]{"#1"} "##.to_string()));
+        assert_eq!(
+            seq[3],
+            Token::Preamble(r"\newcommand{\noopsort}[1]{} ".to_string())
+        );
+        assert_eq!(
+            seq[4],
+            Token::Preamble(r##"\newcommand{\singleletter}[1]{"#1"} "##.to_string())
+        );
         assert_eq!(seq[5], Token::CloseEntry);
         assert_eq!(seq[6], Token::EndOfFile);
         Ok(())
@@ -621,7 +676,9 @@ mod tests {
 
     #[test]
     fn test_accented_names_and_escaped_strings() -> Result<(), Box<dyn Error>> {
-        let l = Lexer::from_str(r#"@book{some, author = "\AA{ke} {Jos{\’{e}} {\’{E}douard} G{\"o}del" }"#)?;
+        let l = Lexer::from_str(
+            r#"@book{some, author = "\AA{ke} {Jos{\’{e}} {\’{E}douard} G{\"o}del" }"#,
+        )?;
         let mut seq = Vec::<Token>::new();
         for t in l.iter() {
             let (token, _info) = t?;
@@ -632,7 +689,10 @@ mod tests {
         assert_eq!(seq[2], Token::OpenEntry);
         assert_eq!(seq[3], Token::EntryId("some".to_string()));
         assert_eq!(seq[4], Token::FieldName(r"author".to_string()));
-        assert_eq!(seq[5], Token::FieldData(r#"\AA{ke} {Jos{\’{e}} {\’{E}douard} G{"o}del"#.to_string()));
+        assert_eq!(
+            seq[5],
+            Token::FieldData(r#"\AA{ke} {Jos{\’{e}} {\’{E}douard} G{"o}del"#.to_string())
+        );
         assert_eq!(seq[6], Token::CloseEntry);
         assert_eq!(seq[7], Token::EndOfFile);
         Ok(())

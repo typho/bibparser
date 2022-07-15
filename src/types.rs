@@ -77,13 +77,13 @@ impl BibEntry {
 
     /// Given the name of a field, return its `data` the closest Unicode representation
     /// assuming Teχ semantics for the `data`. In particular …
-    /// 
+    ///
     /// * replace “---” and “--” by en-dash and em-dash respectively
     /// * replace the “LaTeχ” control sequence
     /// * replace escaped sequences with their semantic representation
     /// * replace “~” by a non-breaking space
     /// * remove groups and reduce whitespace
-    /// 
+    ///
     /// If you think, we miss something, please file a bug report.
     pub fn unicode_data(&self, field_name: &str) -> Option<String> {
         match self.fields.get(field_name) {

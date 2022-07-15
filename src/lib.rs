@@ -1,9 +1,9 @@
 //! This crate allows to read `.bib` files in pure, safe rust.
-//! 
+//!
 //! `.bib` files are popular in reference management since many resources
 //! allow to export metadata in a BibTeχ or BibLaTeχ file. One entry
 //! in such a file can look like this:
-//! 
+//!
 //! ```tex
 //! @book{DBLP:books/aw/Knuth73a,
 //!     author    = {Donald E. Knuth},
@@ -18,16 +18,16 @@
 //!     bibsource = {dblp computer science bibliography, https://dblp.org}
 //!  }
 //! ```
-//! 
+//!
 //! ([original source](https://dblp.uni-trier.de/rec/books/aw/Knuth73a.html?view=bibtex&param=2))
 //! In this example, we call `book`, a `kind` or `type`. We call `DBLP:books/aw/Knuth73a`, an `ID`.
 //! Then we have a sequence of fields with `name` (like `year`) and `data` (like `1973`).
 //! The formal grammar is not well-specified, but the [biblatex package documentation](https://ctan.ebinger.cc/tex-archive/macros/latex/contrib/biblatex/doc/biblatex.pdf)
 //! and [Tame the BeaST](https://ftp.rrze.uni-erlangen.de/ctan/info/bibtex/tamethebeast/ttb_en.pdf) provide some insights.
-//! 
+//!
 //! Its API is built around the idea of iterating over the bib file's entries:
 //! The API looks as follows:
-//! 
+//!
 //! ```rust
 //! use bibparser::Parser;
 //! use std::str::FromStr;
@@ -45,10 +45,10 @@
 //!     Ok(())
 //! }
 //! ```
-//! 
+//!
 //! Since `data` is often some Teχ-like syntax, we provide the method `unicode_data` with `entry`
 //! in order to generate a representation close to Unicode; resolving some Teχ semantics.
-//! 
+//!
 //! Currently, the entries are read at once. The entire source string is kept in memory and
 //! parsed at once. This is meant to be changed in upcoming releases.
 
@@ -57,6 +57,6 @@ mod lexer;
 mod parser;
 mod types;
 
+pub use crate::parser::BibEntries;
 pub use crate::parser::Parser;
 pub use crate::types::BibEntry;
-pub use crate::parser::BibEntries;

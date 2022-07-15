@@ -37,21 +37,19 @@ impl fmt::Display for LexingError {
 impl LexingError {
     pub fn to_parsing_error(&self) -> ParsingError {
         match self {
-            LexingError::UnexpectedChar(unexp, action, info)
-                => ParsingError {
-                    kind: ParsingErrorKind::UnexpectedText(unexp.to_string(), action.to_string()),
-                    info: (*info).clone(),
+            LexingError::UnexpectedChar(unexp, action, info) => ParsingError {
+                kind: ParsingErrorKind::UnexpectedText(unexp.to_string(), action.to_string()),
+                info: (*info).clone(),
+            },
+            LexingError::UnexpectedEOF(action) => ParsingError {
+                kind: ParsingErrorKind::UnexpectedEOF(action.to_string()),
+                info: lexer::TokenInfo {
+                    lineno: usize::MAX,
+                    colno: usize::MAX,
+                    current_line: "".to_owned(),
+                    current_id: None,
                 },
-            LexingError::UnexpectedEOF(action)
-                => ParsingError {
-                    kind: ParsingErrorKind::UnexpectedEOF(action.to_string()),
-                    info: lexer::TokenInfo{
-                        lineno: usize::MAX,
-                        colno: usize::MAX,
-                        current_line: "".to_owned(),
-                        current_id: None,
-                    },
-                },
+            },
         }
     }
 }
@@ -79,10 +77,12 @@ impl fmt::Display for ParsingError {
                 Some(id) => write!(f, "found duplicate name '{}' in entry '{}'", name, id),
                 None => write!(f, "found duplicate name '{}'", name),
             },
-            ParsingErrorKind::UnexpectedText(unexp, action)
-                => write!(f, "unexpected text '{unexp}' while {action}"),
-            ParsingErrorKind::UnexpectedEOF(action)
-                => write!(f, "unexpected end of file while {action}"),
+            ParsingErrorKind::UnexpectedText(unexp, action) => {
+                write!(f, "unexpected text '{unexp}' while {action}")
+            }
+            ParsingErrorKind::UnexpectedEOF(action) => {
+                write!(f, "unexpected end of file while {action}")
+            }
         }
     }
 }

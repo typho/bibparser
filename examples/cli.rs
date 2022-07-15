@@ -1,5 +1,5 @@
-use std::error;
 use bibparser::Parser;
+use std::error;
 
 use clap;
 use clap::Parser as CLIParser;
@@ -79,13 +79,11 @@ fn print_json(s: &Settings) -> Result<(), Box<dyn error::Error>> {
             }
         }
 
-        json_entries.data.push(
-            Entry {
-                kind: entry.kind,
-                id: entry.id,
-                fields: entry.fields.clone(),
-            }
-        );
+        json_entries.data.push(Entry {
+            kind: entry.kind,
+            id: entry.id,
+            fields: entry.fields.clone(),
+        });
     }
 
     println!("{}", serde_json::to_string(&json_entries)?);

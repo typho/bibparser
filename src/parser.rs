@@ -68,7 +68,11 @@ impl<'i> BibEntries<'i> {
                     T::EntrySymbol => {}
                     T::EntryType(kind) => self.current.kind.push_str(&kind),
                     T::OpenEntry => {}
-                    T::EntryId(id) => if id.to_lowercase() != "preamble" { self.current.id.push_str(&id) },
+                    T::EntryId(id) => {
+                        if id.to_lowercase() != "preamble" {
+                            self.current.id.push_str(&id)
+                        }
+                    }
                     T::FieldName(name) => {
                         self.name_cached = name;
                     }
@@ -89,7 +93,7 @@ impl<'i> BibEntries<'i> {
                         }
                     }
                     T::EndOfFile => {}
-                    T::Preamble(_) => {}  // NOTE: preamble strings are unsupported
+                    T::Preamble(_) => {} // NOTE: preamble strings are unsupported
                 },
                 Err(e) => return Err(e.to_parsing_error()),
             },
@@ -183,8 +187,10 @@ mod tests {
 
     #[test]
     fn test_preamble() -> Result<(), Box<dyn error::Error>> {
-        let mut p = Parser::from_str(r#"@book{tolkien1937, author = {J. R. R. Tolkien}}
-@preamble{ "\ifdefined\DeclarePrefChars\DeclarePrefChars{'’-}\else\fi " } "#)?;
+        let mut p = Parser::from_str(
+            r#"@book{tolkien1937, author = {J. R. R. Tolkien}}
+@preamble{ "\ifdefined\DeclarePrefChars\DeclarePrefChars{'’-}\else\fi " } "#,
+        )?;
 
         let mut count = 0;
         for e in p.iter() {
